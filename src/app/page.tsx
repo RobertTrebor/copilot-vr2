@@ -5,12 +5,37 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { fetchCemeteriesInArea } from "@/lib/overpass";
 import type { OverpassElement } from "@/lib/overpass";
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
 
 export default function Home() {
   const [cemeteries, setCemeteries] = useState<OverpassElement[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [area, setArea] = useState("London");
+  const [selectedCemetery, setSelectedCemetery] = useState<OverpassElement | null>(null);
+  const [graves, setGraves] = useState<OverpassElement[]>([]);
+  const [gravesLoading, setGravesLoading] = useState(false);
+  const [gravesError, setGravesError] = useState<string | null>(null);
+
+  // Fetch graves for a selected cemetery
+  async function handleCemeteryClick(cemetery: OverpassElement) {
+    setSelectedCemetery(cemetery);
+    setGraves([]);
+    setGravesLoading(true);
+    setGravesError(null);
+    try {
+      // Query for graves within the bounds of the cemetery (if available)
+      // For demo, we use the same area as the cemetery name, but ideally use bounding box or relation id
+      const data = await fetchCemeteriesInArea(cemetery.tags?.name || area); // Replace with a more precise query if possible
+      // Filter for graves (amenity=grave) if available
+      const gravesList = (data.elements || []).filter((el: OverpassElement) => el.tags?.amenity === "grave");
+      setGraves(gravesList);
+    } catch (err: any) {
+      setGravesError(err.message);
+    } finally {
+      setGravesLoading(false);
+    }
+  }
 
   useEffect(() => {
     setLoading(true);
@@ -97,7 +122,12 @@ export default function Home() {
             <ul className="list-disc pl-5">
               {cemeteries.slice(0, 10).map((item) => (
                 <li key={item.id}>
-                  {item.tags?.name || "Unnamed cemetery"} (type: {item.type}, id: {item.id})
+                  <button
+                    className="underline text-blue-600 hover:text-blue-800 cursor-pointer bg-transparent border-none p-0"
+                    onClick={() => handleCemeteryClick(item)}
+                  >
+                    {item.tags?.name || "Unnamed cemetery"} (type: {item.type}, id: {item.id})
+                  </button>
                 </li>
               ))}
               {cemeteries.length === 0 && <li>No cemeteries found.</li>}
@@ -152,6 +182,35 @@ export default function Home() {
           Go to nextjs.org →
         </a>
       </footer>
+
+      {/* Cemetery Dialog */}
+      <Dialog open={!!selectedCemetery} onOpenChange={() => setSelectedCemetery(null)}>
+        <DialogContent>
+          <DialogTitle>
+            Graves in {selectedCemetery?.tags?.name || "Unnamed cemetery"}
+          </DialogTitle>
+          <DialogDescription>
+            {gravesLoading && <div>Loading graves...</div>}
+            {gravesError && <div className="text-red-500">Error: {gravesError}</div>}
+            {!gravesLoading && !gravesError && (
+              <ul className="list-disc pl-5">
+                {graves.length > 0 ? (
+                  graves.map((grave) => (
+                    <li key={grave.id}>
+                      {grave.tags?.name || `Grave ${grave.id}`}
+                    </li>
+                  ))
+                ) : (
+                  <li>No graves found in this cemetery.</li>
+                )}
+              </ul>
+            )}
+            <DialogClose asChild>
+              <Button className="mt-4">Close</Button>
+            </DialogClose>
+          </DialogDescription>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
