@@ -1,7 +1,26 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { fetchCemeteriesInArea } from "@/lib/overpass";
 
 export default function Home() {
+  const [cemeteries, setCemeteries] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchCemeteriesInArea("London")
+      .then((data) => {
+        setCemeteries(data.elements || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
+
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
@@ -51,6 +70,22 @@ export default function Home() {
           >
             Read our docs
           </a>
+        </div>
+
+        <div className="w-full max-w-xl mt-8">
+          <h2 className="font-bold mb-2">Cemeteries in London (Overpass API Example)</h2>
+          {loading && <div>Loading...</div>}
+          {error && <div className="text-red-500">Error: {error}</div>}
+          {!loading && !error && (
+            <ul className="list-disc pl-5">
+              {cemeteries.slice(0, 10).map((item) => (
+                <li key={item.id}>
+                  {item.tags?.name || "Unnamed cemetery"} (type: {item.type}, id: {item.id})
+                </li>
+              ))}
+              {cemeteries.length === 0 && <li>No cemeteries found.</li>}
+            </ul>
+          )}
         </div>
       </main>
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
