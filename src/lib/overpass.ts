@@ -1,5 +1,19 @@
 // Example: Query cemeteries using the Overpass API (OpenStreetMap)
 
+export interface OverpassElement {
+  id: number;
+  type: string;
+  tags?: Record<string, string>;
+  lat?: number;
+  lon?: number;
+  nodes?: number[];
+  members?: {
+    type: string;
+    ref: number;
+    role: string;
+  }[];
+}
+
 export async function fetchCemeteriesInArea(areaName: string) {
   const query = `
     [out:json];

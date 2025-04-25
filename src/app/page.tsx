@@ -4,9 +4,10 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { fetchCemeteriesInArea } from "@/lib/overpass";
+import type { OverpassElement } from "@/lib/overpass";
 
 export default function Home() {
-  const [cemeteries, setCemeteries] = useState<any[]>([]);
+  const [cemeteries, setCemeteries] = useState<OverpassElement[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
