@@ -1,5 +1,6 @@
 "use client";
 
+
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -18,6 +19,8 @@ export default function Home() {
   const [gravesError, setGravesError] = useState<string | null>(null);
 
   // Fetch graves for a selected cemetery
+  // This function is called when a cemetery is clicked
+  // It fetches graves within the bounds of the cemetery (if available)
   async function handleCemeteryClick(cemetery: OverpassElement) {
     setSelectedCemetery(cemetery);
     setGraves([]);
@@ -28,10 +31,16 @@ export default function Home() {
       // For demo, we use the same area as the cemetery name, but ideally use bounding box or relation id
       const data = await fetchCemeteriesInArea(cemetery.tags?.name || area); // Replace with a more precise query if possible
       // Filter for graves (amenity=grave) if available
-      const gravesList = (data.elements || []).filter((el: OverpassElement) => el.tags?.amenity === "grave");
+      const gravesList = Array.isArray(data.elements)
+        ? data.elements.filter((el: OverpassElement) => el.tags?.amenity === "grave")
+        : [];
       setGraves(gravesList);
-    } catch (err: any) {
-      setGravesError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setGravesError(err.message);
+      } else {
+        setGravesError(String(err));
+      }
     } finally {
       setGravesLoading(false);
     }
@@ -182,9 +191,7 @@ export default function Home() {
           Go to nextjs.org →
         </a>
       </footer>
-
-      {/* Cemetery Dialog */}
-      <Dialog open={!!selectedCemetery} onOpenChange={() => setSelectedCemetery(null)}>
+      <Dialog open={!!selectedCemetery} onOpenChange={(open) => { if (!open) setSelectedCemetery(null); }}>
         <DialogContent>
           <DialogTitle>
             Graves in {selectedCemetery?.tags?.name || "Unnamed cemetery"}
