@@ -10,10 +10,11 @@ export default function Home() {
   const [cemeteries, setCemeteries] = useState<OverpassElement[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [area, setArea] = useState("London");
 
   useEffect(() => {
     setLoading(true);
-    fetchCemeteriesInArea("London")
+    fetchCemeteriesInArea(area)
       .then((data) => {
         setCemeteries(data.elements || []);
         setLoading(false);
@@ -22,7 +23,7 @@ export default function Home() {
         setError(err.message);
         setLoading(false);
       });
-  }, []);
+  }, [area]);
 
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
@@ -76,7 +77,20 @@ export default function Home() {
         </div>
 
         <div className="w-full max-w-xl mt-8">
-          <h2 className="font-bold mb-2">Cemeteries in London (Overpass API Example)</h2>
+          <form
+            className="mb-4 flex gap-2"
+            onSubmit={e => { e.preventDefault(); setArea(e.currentTarget.area.value); }}
+          >
+            <input
+              name="area"
+              type="text"
+              defaultValue={area}
+              placeholder="Enter area (e.g., London)"
+              className="border rounded px-3 py-2 w-64 text-black"
+            />
+            <Button type="submit">Search</Button>
+          </form>
+          <h2 className="font-bold mb-2">Cemeteries in {area} (Overpass API Example)</h2>
           {loading && <div>Loading...</div>}
           {error && <div className="text-red-500">Error: {error}</div>}
           {!loading && !error && (
